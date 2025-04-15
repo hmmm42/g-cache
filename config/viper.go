@@ -29,13 +29,13 @@ var once sync.Once
 func init() {
 	once.Do(func() {
 		fmt.Println("Loading configuration...")
-		if err := NewViperConfig(); err != nil {
+		if err := newViperConfig(); err != nil {
 			panic(err)
 		}
 	})
 }
 
-func NewViperConfig() (err error) {
+func newViperConfig() (err error) {
 	relPath, err := getRelativePathFromCaller()
 	if err != nil {
 		return

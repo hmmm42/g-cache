@@ -38,6 +38,6 @@ func (e *Entry[V]) Touch() {
 	e.UpdateAt = time.Now()
 }
 
-func New[V any](name string, maxBytes int64, onEvicted func(string, V)) (CacheStrategy[V], error) {
+func New[V any](_ string, maxBytes int64, onEvicted func(string, V)) (CacheStrategy[V], error) {
 	return NewCacheUseLRU[V](maxBytes, DefaultSizeFunc, onEvicted), nil
 }

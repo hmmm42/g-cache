@@ -7,7 +7,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/hmmm42/g-cache/internal/cache"
+	"github.com/hmmm42/g-cache/internal/cache/byteview"
 )
 
 func TestMain(m *testing.M) {
@@ -27,7 +27,7 @@ func TestMain(m *testing.M) {
 
 func TestCacheUseLRU_Basic(t *testing.T) {
 	t.Run("creation", func(t *testing.T) {
-		lru := NewCacheUseLRU[cache.ByteView](100, nil, nil)
+		lru := NewCacheUseLRU[byteview.ByteView](100, nil, nil)
 		if lru == nil {
 			t.Error("Failed to create LRU cache")
 		}

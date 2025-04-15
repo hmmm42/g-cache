@@ -150,7 +150,7 @@ func (c *CacheUseLRU[V]) cleanupSegment(seg *segment[V], ttl time.Duration) {
 	}
 }
 
-func (c *CacheUseLRU[V]) Get(key string) (value V, updateAt time.Time, ok bool) {
+func (c *CacheUseLRU[V]) Get(key string) (value V, updateAt time.Time, found bool) {
 	seg := c.getSegment(key)
 	seg.mu.RLock()
 	defer seg.mu.RUnlock()
