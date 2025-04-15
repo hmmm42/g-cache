@@ -5,13 +5,8 @@ import (
 	"hash/fnv"
 	"sync"
 	"time"
-)
 
-// TODO: 从配置文件中读取配置
-const (
-	defaultCleanupInterval = 2 * time.Minute  // Default interval for cleanup routine
-	defaultTTL             = 10 * time.Minute // Default TTL for cache entries
-	defaultNumSegments     = 16               // Default number of segments for the cache
+	"github.com/hmmm42/g-cache/config"
 )
 
 // segment represents a portion of the cache with its own lock
@@ -60,11 +55,12 @@ func NewCacheUseLRU[V any](maxBytes int64, sizeFunc SizeFunc, onEvicted func(key
 	if sizeFunc == nil {
 		sizeFunc = DefaultSizeFunc
 	}
+	cfg := config.Conf.Eviction
 	c := &CacheUseLRU[V]{
-		segments:        make([]*segment[V], defaultNumSegments),
-		numSegments:     defaultNumSegments,
-		cleanupInterval: defaultCleanupInterval,
-		ttl:             defaultTTL,
+		segments:        make([]*segment[V], cfg.NumSegments),
+		numSegments:     cfg.NumSegments,
+		cleanupInterval: cfg.CleanUpInterval,
+		ttl:             cfg.TTL,
 		stopCleanup:     make(chan struct{}),
 		sizeFunc:        sizeFunc,
 	}
