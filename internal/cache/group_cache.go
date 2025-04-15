@@ -3,6 +3,9 @@ package cache
 import (
 	"log"
 	"sync"
+
+	"github.com/hmmm42/g-cache/config"
+	"github.com/hmmm42/g-cache/internal/cache/singleflight"
 )
 
 type Group struct {
@@ -11,6 +14,8 @@ type Group struct {
 
 	retriever Retriever
 	server    Picker
+
+	flight *singleflight.Group
 }
 
 var (
@@ -40,7 +45,21 @@ func NewGroup(name string, maxBytes int64, retriever Retriever) *Group {
 		name:      name,
 		mainCache: c,
 		retriever: retriever,
+		flight:    singleflight.NewGroup(config.Conf.SingleFlight.TTL),
 	}
 	groupManager[name] = group
 	return group
+}
+
+func (g *Group) RegisterServer(p Picker) {
+	if g.server != nil {
+		panic("server already registered for group")
+	}
+	g.server = p
+}
+
+func GetGroup(name string) *Group {
+	mu.RLock()
+	defer mu.RUnlock()
+	return groupManager[name]
 }

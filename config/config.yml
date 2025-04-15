@@ -2,3 +2,6 @@ eviction:
   clean_up_interval: 2m
   ttl: 10m
   num_segments: 16
+
+single_flight:
+  ttl: 30s

@@ -15,13 +15,18 @@ import (
 var Conf *Config
 
 type Config struct {
-	Eviction *Eviction `yaml:"eviction"`
+	Eviction     *Eviction     `yaml:"eviction"`
+	SingleFlight *SingleFlight `yaml:"single_flight"`
 }
 
 type Eviction struct {
 	CleanUpInterval time.Duration `mapstructure:"clean_up_interval"`
 	TTL             time.Duration `mapstructure:"ttl"`
 	NumSegments     int           `mapstructure:"num_segments"`
+}
+
+type SingleFlight struct {
+	TTL time.Duration `mapstructure:"ttl"`
 }
 
 var once sync.Once
