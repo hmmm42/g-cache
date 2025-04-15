@@ -76,6 +76,7 @@ func NewCacheUseLRU[V any](maxBytes int64, sizeFunc SizeFunc, onEvicted func(key
 			ll:        list.New(),
 			cache:     make(map[string]*list.Element),
 			OnEvicted: onEvicted,
+			sizeFunc:  sizeFunc,
 		}
 	}
 
