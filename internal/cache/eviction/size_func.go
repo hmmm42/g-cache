@@ -3,7 +3,7 @@ package eviction
 import (
 	"unsafe"
 
-	"github.com/hmmm42/g-cache/internal/cache/byteview"
+	"github.com/hmmm42/g-cache/internal/cache/types"
 )
 
 // SizeFunc 是计算值大小的函数类型
@@ -17,7 +17,7 @@ var DefaultSizeFunc = func(value any) int64 {
 		return int64(len(v))
 	case []byte:
 		return int64(len(v))
-	case byteview.ByteView:
+	case types.ByteView:
 		return int64(v.Len())
 	case nil:
 		return 0

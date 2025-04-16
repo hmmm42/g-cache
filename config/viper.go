@@ -17,12 +17,18 @@ var Conf *Config
 type Config struct {
 	Eviction     *Eviction     `yaml:"eviction"`
 	SingleFlight *SingleFlight `yaml:"single_flight"`
+	GroupManager *GroupManager `yaml:"group_manager"`
 }
 
 type Eviction struct {
 	CleanUpInterval time.Duration `mapstructure:"clean_up_interval"`
 	TTL             time.Duration `mapstructure:"ttl"`
 	NumSegments     int           `mapstructure:"num_segments"`
+}
+
+type GroupManager struct {
+	Strategy     string `mapstructure:"strategy"`
+	MaxCacheSize int64  `mapstructure:"max_cache_size"`
 }
 
 type SingleFlight struct {

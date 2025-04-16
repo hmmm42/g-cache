@@ -6,13 +6,13 @@ import (
 	"log"
 	"sync"
 
-	"github.com/hmmm42/g-cache/internal/cache/byteview"
 	"github.com/hmmm42/g-cache/internal/cache/eviction"
+	"github.com/hmmm42/g-cache/internal/cache/types"
 )
 
 type cache struct {
 	mu       sync.RWMutex
-	strategy eviction.CacheStrategy[byteview.ByteView]
+	strategy eviction.CacheStrategy[types.ByteView]
 	maxBytes int64
 }
 
@@ -21,12 +21,12 @@ func newCache(maxBytes int64) (*cache, error) {
 		return nil, errors.New("maxBytes must be greater than or equal to 0")
 	}
 
-	onEvicted := func(key string, _ byteview.ByteView) {
+	onEvicted := func(key string, _ types.ByteView) {
 		// TODO: use logrus
 		log.Printf("cache entry evicted: key=%s", key)
 	}
 
-	s, err := eviction.New[byteview.ByteView]("", maxBytes, onEvicted)
+	s, err := eviction.New[types.ByteView]("", maxBytes, onEvicted)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create cache strategy: %w", err)
 	}
@@ -37,9 +37,9 @@ func newCache(maxBytes int64) (*cache, error) {
 	}, nil
 }
 
-func (c *cache) get(key string) (byteview.ByteView, bool) {
+func (c *cache) get(key string) (types.ByteView, bool) {
 	if c == nil {
-		return byteview.ByteView{}, false
+		return types.ByteView{}, false
 	}
 
 	//TODO: add metrics
@@ -50,10 +50,10 @@ func (c *cache) get(key string) (byteview.ByteView, bool) {
 	if v, _, exists := c.strategy.Get(key); exists {
 		return v, true
 	}
-	return byteview.ByteView{}, false
+	return types.ByteView{}, false
 }
 
-func (c *cache) put(key string, value byteview.ByteView) {
+func (c *cache) put(key string, value types.ByteView) {
 	if c == nil {
 		return
 	}

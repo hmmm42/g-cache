@@ -5,3 +5,7 @@ eviction:
 
 single_flight:
   ttl: 30s
+
+group_manager:
+  strategy: lru
+  max_cache_size: 10240000

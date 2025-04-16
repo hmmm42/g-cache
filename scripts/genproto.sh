@@ -27,7 +27,7 @@ function pb_files {
 }
 
 function gen_for_modules() {
-  local go_out="internal/cache/genproto"
+  local go_out="api/genproto"
   if [ -d "$go_out" ]; then
     log_warning "found existing $go_out, cleaning all files under it"
     run rm -rf $go_out

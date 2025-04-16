@@ -1,4 +1,4 @@
-package byteview
+package types
 
 import (
 	"slices"
@@ -8,6 +8,13 @@ import (
 type ByteView struct {
 	b        []byte
 	expireAt time.Time // Expiration time, 0 means no expiration
+}
+
+func NewByteView(b []byte) ByteView {
+	return ByteView{
+		b:        slices.Clone(b),
+		expireAt: time.Time{},
+	}
 }
 
 func (v ByteView) Len() int {
