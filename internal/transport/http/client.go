@@ -1,42 +1,30 @@
 package http
 
 import (
-	"context"
 	"fmt"
 	"io"
 	"net/http"
 	"net/url"
-	"time"
 
 	"github.com/hmmm42/g-cache/internal/cache"
 )
 
 type HTTPFetcher struct {
-	baseURL    string
-	httpClient *http.Client
+	baseURL string
 }
 
 func NewHTTPFetcher(baseURL string) cache.Fetcher {
 	return &HTTPFetcher{
 		baseURL: baseURL,
-		httpClient: &http.Client{
-			Timeout: 3 * time.Second,
-		},
 	}
 }
 
 func (h *HTTPFetcher) Fetch(group string, key string) ([]byte, error) {
-	ctx := context.Background()
-	u := fmt.Sprintf("%s%s/%s", h.baseURL, url.QueryEscape(group), url.QueryEscape(key))
+	u := fmt.Sprintf("%v%v/%v", h.baseURL, url.QueryEscape(group), url.QueryEscape(key))
 
-	req, err := http.NewRequestWithContext(ctx, "GET", u, nil)
+	res, err := http.Get(u)
 	if err != nil {
-		return nil, fmt.Errorf("creating request failed: %w", err)
-	}
-
-	res, err := h.httpClient.Do(req)
-	if err != nil {
-		return nil, fmt.Errorf("HTTP request failed: %w", err)
+		return nil, err
 	}
 	defer res.Body.Close()
 
@@ -46,10 +34,11 @@ func (h *HTTPFetcher) Fetch(group string, key string) ([]byte, error) {
 
 	b, err := io.ReadAll(res.Body)
 	if err != nil {
-		return nil, fmt.Errorf("reading response body failed: %w", err)
+		return nil, fmt.Errorf("reading response body failed: %v", err)
 	}
 
 	return b, nil
+
 }
 
 // FetcherCreator 返回一个创建HTTP获取器的函数

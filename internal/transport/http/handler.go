@@ -33,14 +33,14 @@ func NewHTTPPool(self string) *HTTPPool {
 }
 
 func (p *HTTPPool) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	if !strings.HasPrefix(r.URL.Path, p.self) {
+	if !strings.HasPrefix(r.URL.Path, p.basePath) {
 		http.Error(w, "invalid cache endpoint", http.StatusNotFound)
 		return
 	}
 
 	p.Log("%s, %s", r.Method, r.URL.Path)
 
-	parts := strings.SplitN(r.URL.Path[len(p.self):], "/", 2)
+	parts := strings.SplitN(r.URL.Path[len(p.basePath):], "/", 2)
 	if len(parts) != 2 {
 		http.Error(w, "bad request format, expected /<basepath>/<groupname>/<key>", http.StatusBadRequest)
 		return
@@ -50,6 +50,10 @@ func (p *HTTPPool) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	group := cache.GetGroup(groupName)
 	if group == nil {
 		http.Error(w, fmt.Sprintf("no group found: %s", groupName), http.StatusNotFound)
+		return
+	}
+	if key == "" {
+		http.Error(w, "key cannot be empty", http.StatusBadRequest)
 		return
 	}
 

@@ -1,7 +1,6 @@
 package config
 
 import (
-	"fmt"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -15,9 +14,9 @@ import (
 var Conf *Config
 
 type Config struct {
-	Eviction     *Eviction     `yaml:"eviction"`
-	SingleFlight *SingleFlight `yaml:"single_flight"`
-	GroupManager *GroupManager `yaml:"group_manager"`
+	Eviction     *Eviction     `mapstructure:"eviction"`
+	SingleFlight *SingleFlight `mapstructure:"single_flight"`
+	GroupManager *GroupManager `mapstructure:"group_manager"`
 }
 
 type Eviction struct {
@@ -39,7 +38,6 @@ var once sync.Once
 
 func init() {
 	once.Do(func() {
-		fmt.Println("Loading configuration...")
 		if err := newViperConfig(); err != nil {
 			panic(err)
 		}
@@ -72,6 +70,6 @@ func getRelativePathFromCaller() (relPath string, err error) {
 	}
 	_, here, _, _ := runtime.Caller(0)
 	relPath, err = filepath.Rel(callerPwd, filepath.Dir(here))
-	fmt.Printf("caller from: %s, here: %s, relPath: %s\n", callerPwd, here, relPath)
+	//fmt.Printf("caller from: %s, here: %s, relPath: %s\n", callerPwd, here, relPath)
 	return
 }

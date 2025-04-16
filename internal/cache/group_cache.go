@@ -59,7 +59,7 @@ func NewGroup(name string, maxBytes int64, retriever Retriever) *Group {
 	return group
 }
 
-func NewGroupManager(groupNames []string, currentPeerAddr string, retrieverFunc RetrieveFunc) GroupManager {
+func NewGroupManager(groupNames []string, retrieverFunc RetrieveFunc) GroupManager {
 	for _, name := range groupNames {
 		retriever := retrieverFunc
 		group := NewGroup(name, config.Conf.GroupManager.MaxCacheSize, retriever)
@@ -154,4 +154,9 @@ func (g *Group) getLocally(key string) (types.ByteView, error) {
 
 func (g *Group) populateCache(key string, value types.ByteView) {
 	g.mainCache.put(key, value)
+}
+
+// Name returns the name of the cache group
+func (g *Group) Name() string {
+	return g.name
 }
