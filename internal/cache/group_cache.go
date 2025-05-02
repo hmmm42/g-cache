@@ -4,7 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"log"
+	"log/slog"
 	"sync"
 
 	"github.com/hmmm42/g-cache/config"
@@ -45,7 +45,7 @@ func NewGroup(name string, maxBytes int64, retriever Retriever) *Group {
 
 	c, err := newCache(maxBytes)
 	if err != nil {
-		log.Printf("failed to create cache: %v", err)
+		slog.Info("failed to create cache", "error", err)
 		return nil
 	}
 
@@ -64,9 +64,11 @@ func NewGroupManager(groupNames []string, retrieverFunc RetrieveFunc) GroupManag
 		retriever := retrieverFunc
 		group := NewGroup(name, config.Conf.GroupManager.MaxCacheSize, retriever)
 		Groups[name] = group
-		log.Printf(
-			"Group %s created with max cache size: %d, retriever: %v",
-			name, group.mainCache.maxBytes, retriever,
+		slog.Info(
+			"Group created",
+			"group", name,
+			"max_size", group.mainCache.maxBytes,
+			"retriever", retriever,
 		)
 	}
 	return Groups
@@ -115,7 +117,7 @@ func (g *Group) load(key string) (value types.ByteView, err error) {
 				if value, err = g.FetchFromPeer(peer, key); err == nil {
 					return value, nil
 				}
-				log.Printf("Failed to fetch from peer %s: %v", peer, err)
+				slog.Info("Failed to fetch from peer", "peer", peer, "error", err)
 			}
 		}
 
@@ -140,7 +142,7 @@ func (g *Group) getLocally(key string) (types.ByteView, error) {
 	bytes, err := g.retriever.retrieve(key)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			log.Printf("caching empty result for non-existent key %q to prevent cache penetration", key)
+			slog.Info("caching empty result for non-existent key to prevent cache penetration", "key", key)
 			g.populateCache(key, types.ByteView{})
 		}
 		return types.ByteView{}, fmt.Errorf("failed to retrieve key %q locally: %w", key, err)

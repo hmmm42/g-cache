@@ -3,7 +3,6 @@ package main
 import (
 	"flag"
 	"fmt"
-	"log"
 	"log/slog"
 
 	"github.com/hmmm42/g-cache/internal/cache"
@@ -39,7 +38,7 @@ func main() {
 	}
 
 	retriver := cache.RetrieveFunc(func(key string) ([]byte, error) {
-		slog.Info("[InMemDB] retrieve key:", "key", key)
+		slog.Info("[InMemDB] retrieve key", "key", key)
 		if v, ok := db[key]; ok {
 			return []byte(v), nil
 		}
@@ -71,6 +70,6 @@ func main() {
 
 	// Handle errors from goroutines
 	for err := range errChan {
-		log.Printf("Server error: %v", err)
+		panic(err)
 	}
 }

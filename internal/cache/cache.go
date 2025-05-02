@@ -3,7 +3,7 @@ package cache
 import (
 	"errors"
 	"fmt"
-	"log"
+	"log/slog"
 	"sync"
 
 	"github.com/hmmm42/g-cache/internal/cache/eviction"
@@ -22,8 +22,7 @@ func newCache(maxBytes int64) (*cache, error) {
 	}
 
 	onEvicted := func(key string, _ types.ByteView) {
-		// TODO: use logrus
-		log.Printf("cache entry evicted: key=%s", key)
+		slog.Info("cache entry evicted", "key", key)
 	}
 
 	s, err := eviction.New[types.ByteView]("", maxBytes, onEvicted)
