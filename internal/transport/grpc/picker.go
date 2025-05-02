@@ -10,6 +10,7 @@ import (
 	pb "github.com/hmmm42/g-cache/api/genproto/groupcachepb"
 	"github.com/hmmm42/g-cache/internal/cache"
 	"github.com/hmmm42/g-cache/internal/cache/picker"
+	"github.com/hmmm42/g-cache/pkg/etcd/discovery"
 	"github.com/hmmm42/g-cache/pkg/validate"
 )
 
@@ -90,7 +91,7 @@ func (s *Server) SetPeers(peersAddr []string) {
 				s.reconstruct()
 			case <-s.stopSignal:
 				if err := s.Stop(); err != nil {
-					slog.Error("failed to stop server", "error", err)
+					slog.Error("stop server failed", "error", err)
 				}
 				return
 			default:
@@ -101,12 +102,62 @@ func (s *Server) SetPeers(peersAddr []string) {
 }
 
 func (s *Server) reconstruct() {
+	serviceList, err := discovery.ListServicePeers("GroupCache")
+	if err != nil {
+		slog.Error("list service peers failed", "error", err)
+		return
+	}
 
+	newClients := make(map[string]*Client)
+	newHash := picker.New(defaultReplicas, nil)
+	newHash.Add(serviceList...)
+
+	s.mu.RLock()
+	for _, addr := range serviceList {
+		if !validate.ValidPeerAddr(addr) {
+			s.mu.RUnlock()
+			panic(fmt.Sprintf("invalid peer address: %s", addr))
+		}
+
+		if client, exists := s.clients[addr]; exists {
+			newClients[addr] = client
+		} else {
+			newClients[addr] = NewClient("GroupCache")
+		}
+		s.mu.RUnlock()
+	}
+
+	s.mu.Lock()
+	oldClients := s.clients
+	s.clients = newClients
+	s.consistHash = newHash
+	s.mu.Unlock()
+
+	for addr, client := range oldClients {
+		if _, ok := newClients[addr]; !ok {
+			_ = client.Close()
+		}
+	}
+	slog.Info("hash ring reconstruct", "service_list", serviceList)
 }
 
 func (s *Server) Pick(key string) (cache.Fetcher, bool) {
-	//TODO implement me
-	panic("implement me")
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+
+	peerAddr := s.consistHash.Get(key)
+	if peerAddr == "" {
+		slog.Warn("hash ring not initialized yet", "local_key", key)
+		return nil, false
+	}
+
+	if peerAddr == s.addr {
+		slog.Debug("key is mapped to current node local", "key", key, "peer", peerAddr)
+		return nil, false
+	}
+
+	slog.Debug("key is mapped to current node", "key", key, "peer", peerAddr)
+	return s.clients[peerAddr], true
 }
 
 func (s *Server) Stop() error {

@@ -9,14 +9,17 @@ import (
 	"time"
 
 	"github.com/spf13/viper"
+	clientv3 "go.etcd.io/etcd/client/v3"
 )
 
 var Conf *Config
+var DefaultEtcdConfig clientv3.Config
 
 type Config struct {
 	Eviction     *Eviction     `mapstructure:"eviction"`
 	SingleFlight *SingleFlight `mapstructure:"single_flight"`
 	GroupManager *GroupManager `mapstructure:"group_manager"`
+	Etcd         *Etcd         `mapstructure:"etcd"`
 }
 
 type Eviction struct {
@@ -32,6 +35,11 @@ type GroupManager struct {
 
 type SingleFlight struct {
 	TTL time.Duration `mapstructure:"ttl"`
+}
+
+type Etcd struct {
+	Address []string `mapstructure:"address"`
+	TTL     int      `mapstructure:"ttl"`
 }
 
 var once sync.Once
@@ -72,4 +80,11 @@ func getRelativePathFromCaller() (relPath string, err error) {
 	relPath, err = filepath.Rel(callerPwd, filepath.Dir(here))
 	//fmt.Printf("caller from: %s, here: %s, relPath: %s\n", callerPwd, here, relPath)
 	return
+}
+
+func initClientV3Config() {
+	DefaultEtcdConfig = clientv3.Config{
+		Endpoints:   Conf.Etcd.Address,
+		DialTimeout: 5 * time.Second,
+	}
 }

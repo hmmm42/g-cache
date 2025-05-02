@@ -9,3 +9,10 @@ single_flight:
 group_manager:
   strategy: lru
   max_cache_size: 10240000
+
+etcd:
+  address:
+    - 127.0.0.1:2379
+    - 127.0.0.1:22379
+    - 127.0.0.1:32379
+  ttl: 5
