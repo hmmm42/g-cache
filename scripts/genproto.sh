@@ -50,7 +50,7 @@ function gen_for_modules() {
       -I="/usr/local/include/" \
       -I="${API_ROOT}" \
       "--go_out=${go_out}" --go_opt=paths=source_relative \
-      --go-grpc_opt=require_unimplemented_servers=false \
+#      --go-grpc_opt=require_unimplemented_servers=false \
       "--go-grpc_out=${go_out}" --go-grpc_opt=paths=source_relative \
       "${API_ROOT}/${dir}/$pb_file"
   done

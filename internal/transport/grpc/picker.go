@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 	"log/slog"
+	"net"
+	"strings"
 	"sync"
 	"time"
 
@@ -12,6 +14,7 @@ import (
 	"github.com/hmmm42/g-cache/internal/cache/picker"
 	"github.com/hmmm42/g-cache/pkg/etcd/discovery"
 	"github.com/hmmm42/g-cache/pkg/validate"
+	"google.golang.org/grpc"
 )
 
 var (
@@ -158,6 +161,93 @@ func (s *Server) Pick(key string) (cache.Fetcher, bool) {
 
 	slog.Debug("key is mapped to current node", "key", key, "peer", peerAddr)
 	return s.clients[peerAddr], true
+}
+
+func (s *Server) Start() error {
+	if err := s.initServer(); err != nil {
+		return fmt.Errorf("init server failed: %w", err)
+	}
+
+	lis, err := s.setupListener()
+	if err != nil {
+		return fmt.Errorf("setup listener failed: %w", err)
+	}
+
+	grpcServer := s.setupGRPCServer()
+
+	errChan := make(chan error, 1)
+	go func() {
+		defer func() {
+			if s != nil {
+				if err := s.Stop(); err != nil {
+					slog.Error("stop server failed", "error", err)
+				}
+			}
+		}()
+		err := s.registerService(lis, errChan)
+		if err != nil {
+			errChan <- err
+		}
+	}()
+
+	if err := s.serveRequests(grpcServer, lis); err != nil {
+		return fmt.Errorf("serve requests failed: %w", err)
+	}
+	return nil
+}
+
+func (s *Server) initServer() error {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	if s.isRunning {
+		return fmt.Errorf("server %s is already running", s.addr)
+	}
+
+	s.isRunning = true
+	s.stopSignal = make(chan error)
+	return nil
+}
+
+func (s *Server) setupListener() (net.Listener, error) {
+	port := strings.Split(s.addr, ":")[1]
+	lis, err := net.Listen("tcp", ":"+port)
+	if err != nil {
+		return nil, fmt.Errorf("listen %s failed: %v", s.addr, err)
+	}
+	return lis, nil
+}
+
+func (s *Server) setupGRPCServer() *grpc.Server {
+	grpcServer := grpc.NewServer()
+	pb.RegisterGroupCacheServer(grpcServer, s)
+	return grpcServer
+}
+
+func (s *Server) registerService(lis net.Listener, errChan chan error) error {
+	defer func() {
+		if err := lis.Close(); err != nil {
+			slog.Error("close grpc server failed", "error", err)
+		}
+	}()
+
+	err := discovery.Register(serviceName, s.addr, s.stopSignal)
+	if err != nil {
+		slog.Error("register service failed", "error", err)
+		errChan <- err
+		return err
+	}
+
+	<-s.stopSignal
+	slog.Info("service unregistered", "addr", s.addr)
+	return nil
+}
+
+func (s *Server) serveRequests(grpcServer *grpc.Server, lis net.Listener) error {
+	if err := grpcServer.Serve(lis); err != nil && s.isRunning {
+		return fmt.Errorf("failed to serve on %s: %v", s.addr, err)
+	}
+	return nil
 }
 
 func (s *Server) Stop() error {
